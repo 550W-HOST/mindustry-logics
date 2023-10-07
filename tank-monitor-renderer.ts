@@ -75,6 +75,8 @@ const barHeight = isLargeDisplay ? 12 : 5
 const barSpacing = isLargeDisplay ? 10 : 5
 const barHeightHalf = barHeight / 2;
 
+var warningLevel = 0;
+
 // === initialization
 
 runInitialChecks()
@@ -86,7 +88,11 @@ while (Vars.links == initialLinks) {
 // === functions ===
 
 function mainLoop() {
-    draw.clear(90, 90, 90)
+    if (warningLevel != 0) {
+        draw.clear(158, 52, 80);
+    } else {
+        draw.clear(90, 90, 90)
+    }
     drawIcon()
 
     copyMem(MemoryFields.BASE + MemoryFields.DELTA, MemoryFields.BASE + MemoryFields.DELTA, MemoryFields.STRUCT_SIZE)
@@ -94,10 +100,15 @@ function mainLoop() {
     copyMem(MemoryFields.BASE + MemoryFields.TOTAL_LIQUID_CAPACITY, MemoryFields.BASE + MemoryFields.TOTAL_LIQUID_CAPACITY, MemoryFields.STRUCT_SIZE)
     copyMem(MemoryFields.BASE + MemoryFields.TIMESTAMP, MemoryFields.BASE + MemoryFields.TIMESTAMP, MemoryFields.STRUCT_SIZE)
     printFlush()
+
+    warningLevel = 0;
+
     drawStats(0)
     drawStats(1)
     drawStats(2)
     drawStats(3)
+
+    drawWarning();
 
     drawFlush(disp)
 }
@@ -108,7 +119,7 @@ function drawStats(i) {
     const baseAddr = MemoryFields.BASE + i * MemoryFields.STRUCT_SIZE
 
     if (Math.abs(mem[baseAddr + MemoryFields.TIMESTAMP] - Vars.time) > 3000) {
-        draw.color(200, 0, 0)
+        draw.color(200, 200, 200)
         draw.stroke(3)
         draw.line({
             x: 5,
@@ -125,12 +136,24 @@ function drawStats(i) {
 
     const liquidRatio = liquids / liquidCapacity
     const barWidth = (liquidRatio) * D
-    const barDeltaUnitWidth = (delta / liquidCapacity) * D
-    const barDeltaWidth60s = Math.min(D, barDeltaUnitWidth * 60)
-    const barDeltaWidth300s = Math.min(D, barDeltaUnitWidth * 300)
+    const barDeltaRatio = delta / liquidCapacity
+    const barDeltaUnitWidth = barDeltaRatio * D
+    const barDeltaWidth60s = constrainAbsolute(barDeltaUnitWidth * 60, D)
+    const barDeltaWidth300s = constrainAbsolute(barDeltaUnitWidth * 300, D)
+
+    const liquidDrainsIn = liquids / -Math.min(-1e-7, delta);
+
+    print`liquids drains in ${liquidDrainsIn} (${liquids} / ${delta}\n\n`
+
+    if (liquidDrainsIn < 60) {
+        warningLevel = Math.max(warningLevel, 2);
+    } else if (liquidDrainsIn < 300) {
+        warningLevel = Math.max(warningLevel, 1);
+    }
 
     if (liquidRatio < 0.5) {
         draw.color(200, 200, 30)
+        warningLevel = Math.max(warningLevel, 1);
     } else {
         draw.color(69, 169, 230)
     }
@@ -155,6 +178,16 @@ function drawStats(i) {
         width: barDeltaWidth60s,
     })
 
+    if (liquidRatio < 0.1) {
+        draw.color(240, 0, 0)
+        draw.stroke(3)
+        draw.line({
+            x: 5,
+            y: y0,
+            x2: 5 + barHeight,
+            y2: y0 + barHeight,
+        })
+    }
 }
 
 function runInitialChecks() {
@@ -202,6 +235,31 @@ function drawIcon() {
         size: 15,
         rotation: 0
     })
+    draw.image({
+        x: 32,
+        y: D - 17,
+        image: Items.copper,
+        size: 15,
+        rotation: 0
+    })
+}
+
+function drawWarning() {
+    switch (warningLevel) {
+        case 0:
+            return;
+        case 1:
+            draw.color(255, 240, 0)
+            break;
+        case 2:
+            draw.color(240, 30, 40)
+            break;
+    }
+    draw.triangle({
+        x: D - 25, y: D - 25,
+        x2: D - 5, y2: D - 25,
+        x3: D - 15, y3: D - 25 + 20 * 0.866
+    })
 }
 
 function checkMemoryState() {
@@ -229,6 +287,9 @@ function runBackend() {
     var oldestSampleValue = 0
     var latestSampleValue = 0;
     var oldestSampleTimestamp = 0;
+    var latestSampleTimestamp = 1e9;
+
+    var itemCategoryOfInterestSorter = getFirst(Blocks.sorter) ?? getFirst(Blocks.invertedSorter) ?? getFirst(Blocks.unloader);
 
     while (Vars.links == initialLinks) {
         main()
@@ -243,9 +304,13 @@ function runBackend() {
             oldestSampleValue = mem[headAddr]
             oldestSampleTimestamp = mem[headAddr_1]
             deltaSmoothingBufferLength -= 1;
+        } else if (deltaSmoothingBufferLength == 0) {
+            oldestSampleValue = value;
+            oldestSampleTimestamp = Vars.time;
         }
 
         latestSampleValue = value;
+        latestSampleTimestamp = Vars.time;
         mem[headAddr] = value
         mem[headAddr_1] = Vars.time
         deltaSmoothingBufferHead = (deltaSmoothingBufferHead + 1) % backendDeltaSmoothingSampleCount
@@ -253,8 +318,8 @@ function runBackend() {
     }
 
     function getSmoothedDeltaValue() {
-        print`${latestSampleValue} ${deltaSmoothingBufferLength} ${oldestSampleTimestamp}`
-        return (latestSampleValue - oldestSampleValue) / (Vars.time - oldestSampleTimestamp) * 1000
+        print`${latestSampleValue} ${deltaSmoothingBufferLength} ${oldestSampleTimestamp}\n`
+        return (latestSampleValue - oldestSampleValue) / (latestSampleTimestamp - oldestSampleTimestamp) * 1000
     }
 
 
@@ -267,6 +332,13 @@ function runBackend() {
             if (building.type == Blocks.liquidContainer || building.type == Blocks.liquidTank) {
                 totalLiquids += building.totalLiquids
                 totalCapacity += building.liquidCapacity
+            } else if (building.type == Blocks.container || building.type == Blocks.vault) {
+                if (itemCategoryOfInterestSorter?.config !== undefined) {
+                    totalLiquids += building[itemCategoryOfInterestSorter.config]
+                } else {
+                    totalLiquids += building.totalItems
+                }
+                totalCapacity += building.itemCapacity
             }
         }
 
@@ -275,7 +347,7 @@ function runBackend() {
         // printFlush()
         pushDeltaSmoothingValue(totalLiquids)
         delta = getSmoothedDeltaValue()
-        print`(${Vars.time}) delta=${delta}`
+        print`(${Vars.time}) delta=${delta}\n`
         printFlush()
 
         const baseAddr = MemoryFields.BASE
