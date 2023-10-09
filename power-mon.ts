@@ -1,3 +1,5 @@
+var __appName = "Power Monitor"
+
 // while (!Vars.links);
 
 function getFirst(type): AnyBuilding {

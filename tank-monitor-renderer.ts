@@ -1,3 +1,5 @@
+var __appName = "Liquid and Item Container Monitor"
+
 // === configurations ===
 
 const mem = new Memory(getBuilding("cell1"))
@@ -182,9 +184,9 @@ function drawStats(i) {
         draw.color(240, 0, 0)
         draw.stroke(3)
         draw.line({
-            x: 5,
+            x: D - 5 - barHeight,
             y: y0,
-            x2: 5 + barHeight,
+            x2: D - 5,
             y2: y0 + barHeight,
         })
     }
