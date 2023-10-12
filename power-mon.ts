@@ -155,6 +155,7 @@ function drawPowerCapacityIndicator() {
 }
 
 while (Vars.links == initialLinks) { // observe reconnections
+    const pStorageRatio = firstNode.powerNetStored / firstNode.powerNetCapacity;
     const pIn = firstNode.powerNetIn;
     const pOut = firstNode.powerNetOut;
     const pGainDelta = pIn - pOut;
@@ -163,7 +164,7 @@ while (Vars.links == initialLinks) { // observe reconnections
     maxScale = Math.max(maxFlow, maxScale);
     // maxScale = maxFlow < 0.3 * maxScale ? 1.2 * maxFlow : maxScale;
 
-    if (pIn <= pOut && (Math.floor(Vars.time / 700) % 2 == 0)) {
+    if ((pStorageRatio < 0.95 && pIn <= pOut) && (Math.floor(Vars.time / 700) % 2 == 0)) {
         draw.clear(158, 52, 80);
     } else {
         draw.clear(80, 80, 80);
