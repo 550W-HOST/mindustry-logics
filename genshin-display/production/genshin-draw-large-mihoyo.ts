@@ -1,3 +1,31 @@
+const sw = getBuilding("switch1")
+
+removeAll()
+
+while (!sw.enabled);
+
+draw.color(0, 0, 0)
+
+print("drawing")
+printFlush()
+
+drawGenshin0_0(getBuilding("display1"), 128)
+drawGenshin0_1(getBuilding("display2"), 128)
+drawGenshin0_2(getBuilding("display3"), 128)
+drawGenshin0_3(getBuilding("display4"), 128)
+drawGenshin0_4(getBuilding("display5"), 128)
+drawGenshin1_0(getBuilding("display6"), 128)
+drawGenshin1_1(getBuilding("display7"), 128)
+drawGenshin1_2(getBuilding("display8"), 128)
+drawGenshin1_3(getBuilding("display9"), 128)
+drawGenshin1_4(getBuilding("display10"), 128)
+drawGenshin2_0(getBuilding("display11"), 128)
+drawGenshin2_1(getBuilding("display12"), 128)
+drawGenshin2_2(getBuilding("display13"), 128)
+drawGenshin2_3(getBuilding("display14"), 128)
+drawGenshin2_4(getBuilding("display15"), 128)
+
+
 drawGenshin0_0(getBuilding("display1"), 0)
 drawGenshin0_1(getBuilding("display2"), 0)
 drawGenshin0_2(getBuilding("display3"), 0)
@@ -13,39 +41,66 @@ drawGenshin2_1(getBuilding("display12"), 0)
 drawGenshin2_2(getBuilding("display13"), 0)
 drawGenshin2_3(getBuilding("display14"), 0)
 drawGenshin2_4(getBuilding("display15"), 0)
-function drawGenshin0_0(target, grayscale) {
+
+print("done")
+printFlush()
+
+while (sw.enabled);
+
+removeAll()
+
+function removeAll() {
     draw.clear(255, 255, 255)
-    drawFlush(target)
+    drawFlush(getBuilding("display1"))
+    draw.clear(255, 255, 255)
+    drawFlush(getBuilding("display2"))
+    draw.clear(255, 255, 255)
+    drawFlush(getBuilding("display3"))
+    draw.clear(255, 255, 255)
+    drawFlush(getBuilding("display4"))
+    draw.clear(255, 255, 255)
+    drawFlush(getBuilding("display5"))
+    draw.clear(255, 255, 255)
+    drawFlush(getBuilding("display6"))
+    draw.clear(255, 255, 255)
+    drawFlush(getBuilding("display7"))
+    draw.clear(255, 255, 255)
+    drawFlush(getBuilding("display8"))
+    draw.clear(255, 255, 255)
+    drawFlush(getBuilding("display9"))
+    draw.clear(255, 255, 255)
+    drawFlush(getBuilding("display10"))
+    draw.clear(255, 255, 255)
+    drawFlush(getBuilding("display11"))
+    draw.clear(255, 255, 255)
+    drawFlush(getBuilding("display12"))
+    draw.clear(255, 255, 255)
+    drawFlush(getBuilding("display13"))
+    draw.clear(255, 255, 255)
+    drawFlush(getBuilding("display14"))
+    draw.clear(255, 255, 255)
+    drawFlush(getBuilding("display15"))
+}
+
+function drawGenshin0_0(target, grayscale) {
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin0_1(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin0_2(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin0_3(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin0_4(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin1_0(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin1_1(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
     draw.rect({ x: 173, y: 153, width: 3, height: -23 })
     draw.rect({ x: 170, y: 152, width: 3, height: -21 })
@@ -218,8 +273,6 @@ function drawGenshin1_1(target, grayscale) {
     drawFlush(target)
 }
 function drawGenshin1_2(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
     draw.rect({ x: 0, y: 153, width: 2, height: -23 })
     draw.rect({ x: 2, y: 152, width: 2, height: -22 })
@@ -501,8 +554,6 @@ function drawGenshin1_2(target, grayscale) {
     drawFlush(target)
 }
 function drawGenshin1_3(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
     draw.rect({ x: 0, y: 147, width: 7, height: -24 })
     draw.rect({ x: 39, y: 147, width: 1, height: -36 })
@@ -717,32 +768,20 @@ function drawGenshin1_3(target, grayscale) {
     drawFlush(target)
 }
 function drawGenshin1_4(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin2_0(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin2_1(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin2_2(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin2_3(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin2_4(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }

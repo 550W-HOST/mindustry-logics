@@ -14,38 +14,24 @@ drawGenshin2_2(getBuilding("display13"), 0)
 drawGenshin2_3(getBuilding("display14"), 0)
 drawGenshin2_4(getBuilding("display15"), 0)
 function drawGenshin0_0(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin0_1(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin0_2(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin0_3(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin0_4(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin1_0(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin1_1(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
     draw.rect({ x: 173, y: 153, width: 3, height: -23 })
     draw.rect({ x: 170, y: 152, width: 3, height: -21 })
@@ -218,8 +204,6 @@ function drawGenshin1_1(target, grayscale) {
     drawFlush(target)
 }
 function drawGenshin1_2(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
     draw.rect({ x: 0, y: 153, width: 2, height: -23 })
     draw.rect({ x: 2, y: 152, width: 2, height: -22 })
@@ -501,8 +485,6 @@ function drawGenshin1_2(target, grayscale) {
     drawFlush(target)
 }
 function drawGenshin1_3(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
     draw.rect({ x: 0, y: 147, width: 7, height: -24 })
     draw.rect({ x: 39, y: 147, width: 1, height: -36 })
@@ -717,32 +699,20 @@ function drawGenshin1_3(target, grayscale) {
     drawFlush(target)
 }
 function drawGenshin1_4(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin2_0(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin2_1(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin2_2(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin2_3(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
 function drawGenshin2_4(target, grayscale) {
-    draw.clear(255, 255, 255)
-    drawFlush(target)
     draw.color(grayscale, grayscale, grayscale)
 }
