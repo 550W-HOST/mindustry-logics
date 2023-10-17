@@ -11,11 +11,12 @@ let count = 20;
 
 do {
     unitBind(Units.poly);
-} while (Vars.unit.controlled);
+} while (!Vars.unit || Vars.unit.controlled);
 unitControl.flag(150);
 
 if (!sourceX && !sourceY) {
-    const [, coreX, coreY] = unitLocate.building({ group: 'core', enemy: false });
+    const [found, coreX, coreY] = unitLocate.building({ group: 'core', enemy: false });
+    if (!found) endScript();
     sourceX = coreX;
     sourceY = coreY;
 }
