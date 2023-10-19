@@ -4,7 +4,10 @@ var unitFlag = 130000 + Math.rand(999)
 
 const config = {
     waypoints: new MutableArray([
-        314, 141
+        362, 229, 
+        376, 254, 
+        336, 251, 
+        295, 229
     ]),
     itemTypes: new MutableArray([
         Items.phaseFabric,
@@ -59,7 +62,7 @@ function main() {
                 doUnitApproachAndWait(wpX, wpY)
                 var [, building,] = unitControl.getBlock(wpX, wpY)
 
-                itemsToDrop = Math.min(building.itemCapacity - building[item], itemsToDrop)
+                itemsToDrop = Math.max(0, Math.min(building.itemCapacity - building[item], itemsToDrop))
                 print`Item to drop capped at ${itemsToDrop}\n`; printFlush()
                 // wait(1)
                 unitControl.itemDrop(building, itemsToDrop)
@@ -67,6 +70,10 @@ function main() {
 
                 if (Vars.unit.health < 0.5 * Vars.unit.maxHealth) {
                     selfHeal()
+                }
+
+                if (Vars.unit.dead) {
+                    endScript()
                 }
             }
         }
