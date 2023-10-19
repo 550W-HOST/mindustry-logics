@@ -4,6 +4,7 @@ function bindFreeUnit(unitType, tryBind = false) {
     var first = undefined;
     while (true) {
         unitBind(unitType)
+        if (Vars.unit === undefined) break;
         if (first === undefined) {
             first = Vars.unit;
         } else if (first == Vars.unit) {
