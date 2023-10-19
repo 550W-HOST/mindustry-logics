@@ -4,11 +4,7 @@ var unitFlag = 130000 + Math.rand(999)
 
 const config = {
     waypoints: new MutableArray([
-        264, 257,
-        285, 299,
-        317, 300,
-        352, 258,
-        316, 236
+        314, 141
     ]),
     itemTypes: new MutableArray([
         Items.phaseFabric,
@@ -62,18 +58,34 @@ function main() {
                 printFlush()
                 doUnitApproachAndWait(wpX, wpY)
                 var [, building,] = unitControl.getBlock(wpX, wpY)
-                while (building.type != Blocks.overdriveDome) {
-                    print`Expected overdriveDome but found ${building}`
-                    printFlush()
-                }
+
                 itemsToDrop = Math.min(building.itemCapacity - building[item], itemsToDrop)
                 print`Item to drop capped at ${itemsToDrop}\n`; printFlush()
                 // wait(1)
                 unitControl.itemDrop(building, itemsToDrop)
                 // wait(1)
+
+                if (Vars.unit.health < 0.5 * Vars.unit.maxHealth) {
+                    selfHeal()
+                }
             }
         }
     }
+}
+
+function selfHeal() {
+    var [found, x, y,] = unitLocate.building(
+        {
+            group: "repair",
+            enemy: false
+        }
+    )
+
+    if (!found) return;
+
+    doUnitApproachAndWait(x, y);
+    var timeout = Vars.time + 10000;
+    while (Vars.unit.health < 0.9 * Vars.unit.maxHealth && Vars.time < timeout);
 }
 
 function waitUntilStop() {
@@ -113,7 +125,8 @@ function init() {
 
 function bindFreeUnit(unitType, tryBind = false) {
     var first = undefined;
-    while (true) {
+    var ttl = 64;
+    while (ttl--) {
         unitBind(unitType)
         if (Vars.unit === undefined) break;
         if (first === undefined) {
@@ -129,6 +142,7 @@ function bindFreeUnit(unitType, tryBind = false) {
         }
     }
 
+    ttl = 64;
     while (true) {
         unitBind(unitType)
         if (Vars.unit.controlled && Vars.unit.controller != Vars.this) {
@@ -143,7 +157,7 @@ function bindFreeUnit(unitType, tryBind = false) {
             }
         }
 
-        if (tryBind && Vars.unit == first) {
+        if (tryBind && (ttl-- == 0 || Vars.unit == first)) {
             break;
         }
     }
