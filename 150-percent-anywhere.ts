@@ -1,4 +1,4 @@
-asm`set version "2.3"`;
+asm`set version "2.4"`;
 asm`set state "init"`;
 
 let item1: ItemSymbol = Items.phaseFabric;
@@ -10,27 +10,26 @@ const dest = () => getLink(0);
 
 const currentItem = () => sensor(item2, dest()) > sensor(item1, dest()) ? item1 : item2;
 
+let lastUnitCheck = 0;
+let unitCheckFail = false;
+
 main();
 
 function main() {
     while (1) {
-        // idle
-        if (sensor(currentItem(), dest()) > dest().itemCapacity - takeCount) {
+        // always release unit for a while
+        if (Vars.unit) {
+            reachBuilding(source());
+            unitControl.unbind(); // not actually "unbind" from Vars.unit
+        }
+        setState("idle: release unit");
+        wait(1);
+        while (sensor(currentItem(), dest()) > dest().itemCapacity - takeCount) {
             setState("idle: dest almost full");
-            if (Vars.unit) {
-                reachBuilding(source());
-                unitControl.unbind(); // not actually "unbind" from Vars.unit
-            }
-            while (sensor(currentItem(), dest()) > dest().itemCapacity - takeCount) {
-                wait(1);
-            }
-            bindAvailableUnit();
-            // won't bind a new unit, unless it's dead or controlled by other processor
+            wait(1);
         }
-
-        if (!Vars.unit) {
-            bindAvailableUnit();
-        }
+        bindAvailableUnit();
+        // won't bind a new unit, unless it's dead or controlled by other processor
 
         // discard useless items
         if (Vars.unit.totalItems > 0 && Vars.unit.firstItem != currentItem()) {
@@ -59,8 +58,13 @@ function main() {
 
 function bindAvailableUnit() {
     setState("bind unit");
-    while (!Vars.unit || Vars.unit.dead || Vars.unit.controlled) {
-        unitBind(Units.poly);
+    while (1) {
+        while (!Vars.unit || Vars.unit.dead || Vars.unit.controlled) {
+            unitBind(Units.poly);
+        }
+        unitControl.idle();
+        wait(0.5);
+        if (Vars.unit.controller === Vars.this) break;
     }
     unitControl.flag(150);
 }
@@ -84,11 +88,12 @@ function checkAlive() {
     let unitDead = Vars.unit.dead;
     let unitControlled = Vars.unit.controlled;
     let unitController = Vars.unit.controller;
-    let unitControlByThis = unitController == Vars.this;
-    let unitCheckFail = unitExists == undefined ||
+    let unitControlByThis = unitController === Vars.this;
+    unitCheckFail = unitExists == undefined ||
         unitDead ||
         (unitControlled && unitControlled != ControlKind.ctrlProcessor) ||
         (unitControlled && !unitControlByThis);
+    lastUnitCheck = Vars.time;
     if (unitCheckFail) {
         endScript();
     }
