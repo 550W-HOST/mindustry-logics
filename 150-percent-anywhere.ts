@@ -1,4 +1,4 @@
-asm`set version "2.2"`;
+asm`set version "2.3"`;
 asm`set state "init"`;
 
 let item1: ItemSymbol = Items.phaseFabric;
@@ -85,10 +85,11 @@ function checkAlive() {
     let unitControlled = Vars.unit.controlled;
     let unitController = Vars.unit.controller;
     let unitControlByThis = unitController == Vars.this;
-    if (unitExists != undefined ||
+    let unitCheckFail = unitExists == undefined ||
         unitDead ||
-        unitControlled != ControlKind.ctrlProcessor ||
-        !unitControlByThis) {
+        (unitControlled && unitControlled != ControlKind.ctrlProcessor) ||
+        (unitControlled && !unitControlByThis);
+    if (unitCheckFail) {
         endScript();
     }
 }
