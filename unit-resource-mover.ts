@@ -1,17 +1,22 @@
-// experimental
+// deprecated. use unit-dense-resource-supplier.ts
 
 var unitFlag = 130000 + Math.rand(999)
 
 const config = {
     waypoints: new MutableArray([
-        362, 229, 
-        376, 254, 
-        336, 251, 
-        295, 229
+        194, 320, 
+        201, 320, 
+        211, 320, 
+        219, 320, 
+        222, 320, 
+        233, 320, 
+        239, 320, 
+        249, 320, 
+        258, 320, 
+        261, 320, 
     ]),
     itemTypes: new MutableArray([
         Items.phaseFabric,
-        Items.silicon
     ])
 }
 
@@ -131,6 +136,8 @@ function init() {
 
 
 function bindFreeUnit(unitType, tryBind = false) {
+    print`Trying to recover posession of ${unitType}`
+    printFlush()
     var first = undefined;
     var ttl = 64;
     while (ttl--) {
@@ -149,6 +156,8 @@ function bindFreeUnit(unitType, tryBind = false) {
         }
     }
 
+    print`Trying to bind to a new ${unitType} \nprevious ttl=${ttl}`
+    printFlush()
     ttl = 64;
     while (true) {
         unitBind(unitType)
@@ -168,7 +177,7 @@ function bindFreeUnit(unitType, tryBind = false) {
             break;
         }
     }
-    print`Unable to bind to ${unitType}`
+    print`Unable to bind to ${unitType}\nprevious ttl=${ttl}`
     printFlush()
     return undefined;
 }
