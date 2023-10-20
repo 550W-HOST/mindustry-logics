@@ -1,9 +1,10 @@
-asm`set version "2.4"`;
+asm`set version "2.5"`;
 asm`set state "init"`;
 
 let item1: ItemSymbol = Items.phaseFabric;
 let item2: ItemSymbol = Items.silicon;
 let takeCount = 30;
+let idlePerItem = 0.1;
 
 const source = () => getCore();
 const dest = () => getLink(0);
@@ -23,7 +24,7 @@ function main() {
             unitControl.unbind(); // not actually "unbind" from Vars.unit
         }
         setState("idle: release unit");
-        wait(1);
+        wait(0.1 + (sensor(currentItem(), dest()) as number) * idlePerItem);
         while (sensor(currentItem(), dest()) > dest().itemCapacity - takeCount) {
             setState("idle: dest almost full");
             wait(1);
@@ -63,8 +64,10 @@ function bindAvailableUnit() {
             unitBind(Units.poly);
         }
         unitControl.idle();
-        wait(0.5);
+        setState("bind unit locking");
+        wait(0.3);
         if (Vars.unit.controller === Vars.this) break;
+        setState("bind unit retry");
     }
     unitControl.flag(150);
 }
