@@ -1,4 +1,4 @@
-asm`set version "2.0"`;
+asm`set version "2.1"`;
 asm`set state "init"`;
 
 let item1: ItemSymbol = Items.phaseFabric;
@@ -59,7 +59,7 @@ function main() {
 
 function bindAvailableUnit() {
     setState("bind unit");
-    while (!Vars.unit || Vars.unit.controlled) {
+    while (!Vars.unit || Vars.unit.dead || Vars.unit.controlled) {
         unitBind(Units.poly);
     }
     unitControl.flag(150);
@@ -80,7 +80,7 @@ function getCore() {
 }
 
 function checkAlive() {
-    if (!Vars.unit) {
+    if (!Vars.unit || Vars.unit.dead) {
         endScript();
     }
 }
