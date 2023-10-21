@@ -6,8 +6,8 @@ var unitFlag = 140000 + Math.rand(999)
 
 const config = {
     waypoints: new MutableArray([
-        158, 322, 267, 322, 
-        151, 320, 151, 387,
+        158, 322, 267, 322,
+        272, 351, 272, 380
         // 272, 124, 343, 124,
         // 299, 127, 272, 127
     ]),
@@ -20,12 +20,9 @@ const config = {
         Blocks.overdriveProjector,
         Blocks.overdriveDome
     ]),
-    // radius: 1
+    radius: 1,
+    allowTakingFromContainer: 1,
 }
-
-var coreX = undefined;
-var coreY = undefined;
-var core = undefined;
 
 var unitItemCapacity = undefined;
 var unitRange = undefined;
@@ -64,7 +61,7 @@ function doFill(itemType) {
         var ey = config.waypoints[bi++];
         print`Ready to scan [green]${bx}->${ex}, ${by}->${ey}`
         printFlush()
-        wait(0.5)
+        wait(0.25)
 
         var lastBuilding = undefined;
 
@@ -77,6 +74,7 @@ function doFill(itemType) {
 
         var pxFloat = bx;
         var pyFloat = by;
+
         for (var step = 0; step <= stepCnt; step++, pxFloat += vx, pyFloat += vy) {
             var px = Math.floor(pxFloat + 0.5)
             var py = Math.floor(pyFloat + 0.5)
@@ -89,7 +87,7 @@ function doFill(itemType) {
                 print`Fetch ${itemType} from home`
                 printFlush()
 
-                if (!fetchItemFromCore(itemType)) return;
+                if (!fetchItemFromAutomaticSource(itemType)) return;
             }
 
             var typ, building;
@@ -196,20 +194,6 @@ function waitUntilStop() {
 }
 
 function init() {
-    var [found, x, y, _core] = unitLocate.building({
-        group: "core",
-        enemy: false
-    })
-
-    if (!found) {
-        print`Failed to locate a core\n`; printFlush()
-        endScript()
-    }
-
-    coreX = x
-    coreY = y;
-    core = _core;
-
     unitItemCapacity = Vars.unit.itemCapacity;
     unitRange = Vars.unit.range;
 }
@@ -236,12 +220,14 @@ function bindFreeUnit(unitType, tryBind = false) {
         }
     }
 
-    print`Trying to bind to a new ${unitType} \nprevious ttl=${ttl}`
-    printFlush()
     ttl = 64;
     while (true) {
         unitBind(unitType)
         if (Vars.unit === undefined) break;
+
+        print`Trying to bind to a new ${unitType} \nprevious ttl=${ttl}`
+        printFlush()
+
         if (Vars.unit.controlled && Vars.unit.controller != Vars.this) {
             // continue
         } else {
@@ -295,13 +281,83 @@ function doUnitApproachAndWait(x, y) {
     // wait(3)
 }
 
-function fetchItemFromCore(itemType) {
-    print`On way of [accent]${itemType} (x${unitItemCapacity}) [white]from [#9999ff]${core} [white]@(${coreX}, ${coreY})\n`;
-    doUnitApproachAndWait(coreX, coreY)
+function distSquareFromBuilding(building: AnyBuilding) {
+    var dx = building.x - Vars.unit.x
+    var dy = building.y - Vars.unit.y
+    return dx * dx + dy * dy
+}
+
+function nearerBuilding(building1: AnyBuilding, building2: AnyBuilding) {
+    if (building1 === undefined) {
+        return building2
+    }
+    if (building2 === undefined) {
+        return building1
+    }
+    var d1 = distSquareFromBuilding(building1)
+    var d2 = distSquareFromBuilding(building2)
+
+    return d1 < d2 ? building1 : building2
+}
+
+function findNearestAcceptableBuilding(itemType) {
+    var [, , , core] = unitLocate.building({
+        group: "core",
+        enemy: false
+    })
+
+    var [, , , storage] = unitLocate.building({
+        group: "storage",
+        enemy: false
+    })
+
+    var target: AnyBuilding = core
+    if (config.allowTakingFromContainer && storage[itemType] >= unitItemCapacity) {
+        target = nearerBuilding(target, storage)
+    }
+
+    if (target === undefined) {
+        print`[red]No acceptable building found: core=${core} storage=${storage}(${itemType}x${storage[itemType]})`
+        printFlush()
+        wait(1)
+        endScript()
+    }
+
+    // print`[white]Selected [red]${target} [white]as source for [#9999ff]${itemType}`
+    // printFlush()
+    // wait(0.7)
+
+    return target
+}
+
+function fetchItemFromAutomaticSource(itemType) {
+    // fetchItemFromSpecifiedSource(findNearestAcceptableBuilding(itemType), itemType)
+    var source: AnyBuilding = undefined;
+    var sourceX;
+    var sourceY;
+
+    var nearestDist = 1e9
+
+    do {
+        var candidate = findNearestAcceptableBuilding(itemType)
+        var candidateDistSq = distSquareFromBuilding(candidate)
+        if (candidateDistSq < nearestDist) {
+            nearestDist = candidateDistSq
+            source = candidate
+        }
+        sourceX = source.x
+        sourceY = source.y
+        print`On way of [accent]${itemType} (x${unitItemCapacity}) [white]from [#9999ff]${source} [white]@(${sourceX}, ${sourceY}) (current @${Vars.unit.x}, ${Vars.unit.y}\n`;
+        printFlush()
+        // wait(0.5)
+        unitControl.move(sourceX, sourceY)
+        checkUnitAvailability()
+    } while (!unitControl.within({ x: sourceX, y: sourceY, radius: 3 }));
+
     print`Discarding ${Vars.unit.totalItems}\n`;
     printFlush()
     do {
-        ensureDrop(core, Vars.unit.totalItems)
+        ensureDrop(source, Vars.unit.totalItems)
         // wait(2)
         unitControl.itemDrop(Blocks.air, Vars.unit.totalItems)
         // wait(2)
@@ -309,10 +365,10 @@ function fetchItemFromCore(itemType) {
 
     var timeout = Vars.time + 5000
     while (Vars.time < timeout && Vars.unit.totalItems == 0) {
-        const itemsToTake = Math.min(unitItemCapacity, core[itemType])
-        print`Taking [accent]${itemType} (x${itemsToTake}) [white]from [#9999ff]${core} [white]@(${coreX}, ${coreY})`; printFlush()
+        const itemsToTake = Math.min(unitItemCapacity, source[itemType])
+        print`Taking [accent]${itemType} (x${itemsToTake}) [white]from [#9999ff]${source} [white]@(${sourceX}, ${sourceY})`; printFlush()
         if (itemsToTake == 0) break;
-        unitControl.itemTake(core, itemType, itemsToTake)
+        unitControl.itemTake(source, itemType, itemsToTake)
         // wait(2)
     }
     return Vars.unit.totalItems != 0
