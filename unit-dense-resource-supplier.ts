@@ -12,15 +12,15 @@ const config = {
         // 299, 127, 272, 127
     ]),
     itemTypes: new MutableArray([
-        Items.phaseFabric
+        Items.phaseFabric,
     ]),
     acceptedBlocks: new MutableArray([
         Blocks.forceProjector,
         Blocks.mendProjector,
         Blocks.overdriveProjector,
-        Blocks.overdriveDome
+        Blocks.overdriveDome,
+        Blocks.thoriumReactor,
     ]),
-    radius: 1,
     allowTakingFromContainer: 1,
 }
 
@@ -90,7 +90,7 @@ function doFill(itemType) {
                 if (!fetchItemFromAutomaticSource(itemType)) return;
             }
 
-            var typ, building;
+            var typ = undefined, building = undefined;
             while (true) {
                 [typ, building,] = unitControl.getBlock(px, py)
                 if (typ !== undefined) break;
@@ -135,20 +135,26 @@ function ensureDrop(building, count) {
 
 function isAcceptedBlockType(typ) {
     for (var i = 0; i < config.acceptedBlocks.size; i++) {
-        if (typ == config.acceptedBlocks[i]) return true;
+        if (typ == unchecked(config.acceptedBlocks[i])) return true;
     }
     return false;
 }
 
 function checkUnitAvailability() {
+    if (!Vars.unit) {
+        print`[red]Invalid unit ${Vars.unit}`
+        printFlush()
+        wait(1.5)
+    }
     unitControl.flag(unitFlag)
     var ctlr = Vars.unit.controller
-    if (ctlr != Vars.this) {
+    if (Vars.unit.dead) {
+        endScript()
+    } else if (ctlr != Vars.this) {
         print`[red]Possession taken by ${ctlr} @${ctlr.x}, ${ctlr.y}\n`
         printFlush()
+        wait(1.5)
         // stopScript()
-        endScript()
-    } else if (Vars.unit.dead) {
         endScript()
     }
 }
@@ -172,7 +178,9 @@ function selfHealIfNecessary() {
     print`[green][accent]Repairing @${x}, ${y}`
     printFlush()
     var timeout = Vars.time + 10000;
-    while (Vars.unit.health < 0.9 * Vars.unit.maxHealth && Vars.time < timeout);
+    while (Vars.unit.health < 0.9 * Vars.unit.maxHealth && Vars.time < timeout) {
+        checkUnitAvailability()
+    }
 }
 
 function waitUntilStop() {
@@ -273,6 +281,7 @@ function doUnitApproachAndWait(x, y) {
     do {
         // unitControl.approach({ x: x, y: y, radius: 3 })
         unitControl.move(x, y)
+        checkUnitAvailability()
         wait(0.1)
         // wait(3)
     } while (!unitControl.within({ x: x, y: y, radius: 3 }));
@@ -300,55 +309,61 @@ function nearerBuilding(building1: AnyBuilding, building2: AnyBuilding) {
     return d1 < d2 ? building1 : building2
 }
 
-function findNearestAcceptableBuilding(itemType) {
+function findNearestAcceptableStorage(itemType) {
+    if (!config.allowTakingFromContainer) return undefined;
+
+    var [found, , , storage] = unitLocate.building({
+        group: "storage",
+        enemy: false
+    })
+
+    if (!found) return undefined;
+
+    if (storage[itemType] >= unitItemCapacity) {
+        return storage;
+    }
+
+    return undefined;
+}
+
+function getCoreOrPanic() {
     var [, , , core] = unitLocate.building({
         group: "core",
         enemy: false
     })
 
-    var [, , , storage] = unitLocate.building({
-        group: "storage",
-        enemy: false
-    })
-
-    var target: AnyBuilding = core
-    if (config.allowTakingFromContainer && storage[itemType] >= unitItemCapacity) {
-        target = nearerBuilding(target, storage)
-    }
-
-    if (target === undefined) {
-        print`[red]No acceptable building found: core=${core} storage=${storage}(${itemType}x${storage[itemType]})`
+    if (core === undefined) {
+        print`[red]No core found. result=${core}`
         printFlush()
         wait(1)
         endScript()
     }
 
-    // print`[white]Selected [red]${target} [white]as source for [#9999ff]${itemType}`
-    // printFlush()
-    // wait(0.7)
-
-    return target
+    return core;
 }
 
 function fetchItemFromAutomaticSource(itemType) {
     // fetchItemFromSpecifiedSource(findNearestAcceptableBuilding(itemType), itemType)
-    var source: AnyBuilding = undefined;
+    var source = getCoreOrPanic()
+
     var sourceX;
     var sourceY;
 
-    var nearestDist = 1e9
+    var nearestDistSq = distSquareFromBuilding(source)
 
     do {
-        var candidate = findNearestAcceptableBuilding(itemType)
+        var candidate = findNearestAcceptableStorage(itemType)
         var candidateDistSq = distSquareFromBuilding(candidate)
-        if (candidateDistSq < nearestDist) {
-            nearestDist = candidateDistSq
+        if (candidate && candidateDistSq < nearestDistSq) {
+            nearestDistSq = candidateDistSq
             source = candidate
         }
         sourceX = source.x
         sourceY = source.y
-        print`On way of [accent]${itemType} (x${unitItemCapacity}) [white]from [#9999ff]${source} [white]@(${sourceX}, ${sourceY}) (current @${Vars.unit.x}, ${Vars.unit.y}\n`;
+        print`On way of [accent]${itemType} (x${unitItemCapacity}) [white]from [#9999ff]${source} [white]@(${sourceX}, ${sourceY})\n`;
+        // print`(current @${Vars.unit.x}, ${Vars.unit.y})\n`
         printFlush()
+
         // wait(0.5)
         unitControl.move(sourceX, sourceY)
         checkUnitAvailability()
@@ -360,6 +375,7 @@ function fetchItemFromAutomaticSource(itemType) {
         ensureDrop(source, Vars.unit.totalItems)
         // wait(2)
         unitControl.itemDrop(Blocks.air, Vars.unit.totalItems)
+        checkUnitAvailability()
         // wait(2)
     } while (Vars.unit.totalItems)
 
