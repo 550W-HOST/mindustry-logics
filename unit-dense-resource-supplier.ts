@@ -18,8 +18,12 @@ const config = {
         Blocks.forceProjector,
         Blocks.mendProjector,
         Blocks.overdriveProjector,
-        Blocks.overdriveDome,
-        Blocks.thoriumReactor,
+        // Blocks.thoriumReactor, 
+    ]),
+    bindableUnitTypes: new MutableArray([
+        Units.mega, 
+        Units.poly, 
+        Units.mono, 
     ]),
     allowTakingFromContainer: 1,
 }
@@ -32,12 +36,7 @@ main()
 function main() {
     print(' -- ')
     printFlush()
-    bindFreeUnit(Units.mega, true)
-        ?? bindFreeUnit(Units.poly, true)
-        ?? bindFreeUnit(Units.mono, true)
-        ?? reportBindFailure();
-    print`Bound to a ${Vars.unit}\n`
-    printFlush()
+    bindFreeUnitFromConfig()
     wait(1)
 
     init()
@@ -206,8 +205,7 @@ function init() {
     unitRange = Vars.unit.range;
 }
 
-
-function bindFreeUnit(unitType, tryBind = false) {
+function recoverPosessionOfUnit(unitType) {
     print`Trying to recover possession of ${unitType}`
     printFlush()
     var first = undefined;
@@ -227,11 +225,21 @@ function bindFreeUnit(unitType, tryBind = false) {
             return true;
         }
     }
+    return undefined;
+}
 
-    ttl = 64;
+
+function bindFreeUnit(unitType, tryBind = false) {
+    var ttl = 64;
+    var first = Vars.unit;
     while (true) {
         unitBind(unitType)
         if (Vars.unit === undefined) break;
+        if (first === undefined) {
+            first = Vars.unit;
+        } else if (first == Vars.unit) {
+            break;
+        }
 
         print`Trying to bind to a new ${unitType} \nprevious ttl=${ttl}`
         printFlush()
@@ -257,6 +265,22 @@ function bindFreeUnit(unitType, tryBind = false) {
     print`Unable to bind to ${unitType}\nprevious ttl=${ttl}`
     printFlush()
     return undefined;
+}
+
+function bindFreeUnitFromConfig() {
+    for (var i = 0; i < config.bindableUnitTypes.size; i++) {
+        if (recoverPosessionOfUnit(unchecked(config.bindableUnitTypes[i]))) {
+            return;
+        }
+    }
+
+    for (var i = 0; i < config.bindableUnitTypes.size; i++) {
+        if (bindFreeUnit(unchecked(config.bindableUnitTypes[i]))) { 
+            return;
+        }
+    }
+
+    reportBindFailure()
 }
 
 function reportBindFailure() {
