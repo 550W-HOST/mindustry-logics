@@ -23,11 +23,13 @@ def generate_collage(
 
     for i in range(wcnt):
         for j in range(hcnt):
-            pic_to_mlogjs.ndarray_to_mlogjs_str(
+            part = pic_to_mlogjs.ndarray_to_mlogjs_str(
                 img[i * 176: (i + 1) * 176, j * 176: (j + 1) * 176],
                 output_stream=output,
                 function_name=f'drawGenshin{i}_{j}',
+                with_partition_map=True
             )
+            cv2.imwrite(f'part{i}_{j}.png', part)
 
 
 def main():

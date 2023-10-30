@@ -17,7 +17,7 @@ def ndarray_to_mlogjs_str(
     data = np.zeros((sx, sy))
     for i in range(sx):
         for j in range(sy):
-            data[i][j] = (img[i][j] <= np.array([200, 200, 200])).all()
+            data[i][j] = (img[i][j] <= np.array([240, 240, 240])).all()
     # print(data)
 
     color_id_map = np.zeros_like(data, dtype=int)
@@ -59,9 +59,16 @@ def ndarray_to_mlogjs_str(
     # output_stream.write('    draw.clear(255, 255, 255)\n')
     # output_stream.write('    drawFlush(target)\n')
     output_stream.write('    draw.color(grayscale, grayscale, grayscale)\n')
+
+    buffer_length = 0
+
     for i in rectangles:
         output_stream.write(
             '    draw.rect({{ x: {}, y: {}, width: {}, height: {} }})\n'.format(*i))
+        buffer_length += 1
+        if buffer_length >= 240:
+            output_stream.write('    drawFlush(target)\n')
+            buffer_length = 0
     if rectangles:
         output_stream.write('    drawFlush(target)\n')
     output_stream.write('}\n')
