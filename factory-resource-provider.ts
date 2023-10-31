@@ -24,6 +24,8 @@ const dataArray = new MutableArray([
 ]) // 78 instructions
 
 const factoryOffsetQuickLookupTable = new MutableArray([
+    Blocks.unloader, -1, 
+    Blocks.message, -1, 
     Blocks.groundFactory, 0,
     Blocks.airFactory, 22,
     Blocks.navalFactory, 34,
@@ -64,9 +66,11 @@ function getFactoryDataOffset(v): number {
     return -1;
 }
 
-function handleSpecifiedFactory(blk, arrayOffset) {
+function handleSpecifiedFactory(blk: AnyBuilding, arrayOffset) {
     print`Handling specified factory ${blk} (offset = ${arrayOffset})`
     printFlush()
+
+    var demandFlag = false;
     // wait(1)
     for (; dataArray[arrayOffset] !== undefined; arrayOffset += 2) {
         const itemType = dataArray[arrayOffset] as symbol
@@ -74,7 +78,8 @@ function handleSpecifiedFactory(blk, arrayOffset) {
         print`(index ${arrayOffset}) Block ${blk} has ${blk[itemType]}x ${itemType}. ${itemCount} is required at minimum. `
         printFlush()
         // wait(0.5)
-        if (blk[itemType] < itemCount) {
+        var blkItemCount = blk[itemType];
+        if (blkItemCount < itemCount) {
             var timeout = Vars.time + 1000
             while (Vars.time < timeout) {
                 checkState()
@@ -86,12 +91,14 @@ function handleSpecifiedFactory(blk, arrayOffset) {
                         break;
                     }
                 }
+                demandFlag = true;
                 setUnloaders(itemType)
-                print`[green]Set unloader [white]${unloader} []to [green]${itemType}[]. [white]${blk}[${itemType}] = [pink]${blk[itemType]}`
+                print`[green]Set unloaders to [green]${itemType}[]. [white]${blk}[${itemType}] = [pink]${blk[itemType]}`
                 printFlush()
             }
         }
     }
+    return demandFlag;
 }
 
 function setUnloaders(itemType) {
@@ -147,7 +154,7 @@ function loadUnloaders() {
     for (var i = 0; i < Vars.links && unloaderCnt < 6; i++) {
         uldr = getLink(i)
         if (uldr.type == Blocks.unloader) {
-            asm`op add __unloader_loader_set_return @counter 2` 
+            asm`op add __unloader_loader_set_return @counter 2`
             asm`op mul __unloader_loader_instruction_offset 2 ${unloaderCnt}`
             asm`op add @counter __unloader_loader_set_begin __unloader_loader_instruction_offset`
             unloaderCnt++;
@@ -175,8 +182,7 @@ function handleElementaryFactory(blk, unitOffset) {
     // wait(1)
     while (true) {
         if (dataArray[unitOffset] == blk.config) {
-            handleSpecifiedFactory(blk, unitOffset + 1)
-            break;
+            return handleSpecifiedFactory(blk, unitOffset + 1)
         } else {
             print`${dataArray[unitOffset]} does not match current config ${blk.config}, therefore jumped from ${unitOffset} `
             unitOffset += 1
@@ -193,6 +199,7 @@ function handleElementaryFactory(blk, unitOffset) {
             }
         }
     }
+    return false;
 }
 
 function init() {
@@ -203,6 +210,7 @@ function init() {
 }
 
 function main() {
+    var demandFlag = false; // true if any factory has requested any resources
     for (var i = 0; i < Vars.links; i++) {
         const blk = getLink(i)
         const blkFactoryOffset = getFactoryDataOffset(blk.type)
@@ -210,11 +218,17 @@ function main() {
         printFlush()
         if (blkFactoryOffset >= 0) {
             if (isElementaryFactory(blk.type)) {
-                handleElementaryFactory(blk, blkFactoryOffset + 1)
+                demandFlag = demandFlag || handleElementaryFactory(blk, blkFactoryOffset + 1)
             } else {
-                handleSpecifiedFactory(blk, blkFactoryOffset + 1)
+                demandFlag = demandFlag || handleSpecifiedFactory(blk, blkFactoryOffset + 1)
             }
         }
+    }
+    print`[teal]demandFlag = [coral]${demandFlag}\n`
+    printFlush()
+    // wait(1)
+    if (!demandFlag) {
+        setUnloaders(undefined)
     }
 }
 
