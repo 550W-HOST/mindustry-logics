@@ -113,13 +113,36 @@ function showInvalidationMask() {
     draw.rect({ x: 0, y: 0, height: Dy, width: Dx })
 }
 
-while (Vars.links == initialLinks) {
-    const timeBegin = Vars.time
+var nextLoopBeginTime = 0
 
-    const pIn = firstNode.powerNetIn;
-    const pOut = firstNode.powerNetOut;
-    const pNetCap = firstNode.powerNetCapacity
-    const stored = firstNode.powerNetStored
+while (Vars.links == initialLinks) {
+    var pIn = firstNode.powerNetIn
+    var pOut = firstNode.powerNetOut
+    var pNetCap = firstNode.powerNetCapacity
+    var stored = firstNode.powerNetStored
+
+    var repCount = 1
+
+    // begin: fps limiter + smoothing
+    if (Vars.time < nextLoopBeginTime) {
+        do {
+            pIn += firstNode.powerNetIn;
+            pOut += firstNode.powerNetOut;
+            pNetCap += firstNode.powerNetCapacity
+            stored += firstNode.powerNetStored
+
+            repCount++
+        } while (Vars.time < nextLoopBeginTime);
+
+        pIn /= repCount
+        pOut /= repCount
+        pNetCap /= repCount
+        stored /= repCount
+    }
+
+    nextLoopBeginTime = Vars.time + 1000 / getVar<number>("MAX_FPS")
+
+    // end: fps limiter + smoothing
 
     const maxFlow = Math.max(pIn, pOut)
 
@@ -174,7 +197,4 @@ while (Vars.links == initialLinks) {
     }
 
     drawFlush(disp)
-
-    const extraDelay = Math.max(0, 1000 / getVar<number>("MAX_FPS") - (Vars.time - timeBegin))
-    wait(extraDelay / 1000)
 }
