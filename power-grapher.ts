@@ -169,6 +169,7 @@ while (Vars.links == initialLinks) {
     )
     currentScreenTick++
     if (currentScreenTick >= dispW) {
+        showInvalidationMask()
         currentScreenTick = 1
     }
 
