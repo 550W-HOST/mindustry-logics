@@ -1,6 +1,9 @@
-var __appName = "Power Grapher"
+asm`set <Power Grapher>`
+asm`set Version 25.10.a`
 
-asm `set MAX_FPS 999`
+asm`set MAX_FPS 999`
+asm`set CAP_DROP_WARN_THRESHOLD 0.999`
+asm`set CRITICAL_LEVEL 0.25`
 
 // while (!Vars.links);
 
@@ -33,6 +36,7 @@ const strokeWidth = Math.max(1, Math.idiv(Dy, 80))
 const dispW = Math.min(512, Dx)
 
 const displayScaleMultipleFactor = 2
+const storageScaleMultipleFactor = 1.1
 var ioDisplayScale = 1
 var storageDisplayScale = 1
 
@@ -60,7 +64,10 @@ function redrawAtIndex(tick, pIn, pOut, pNetCap, pNetStored) {
     draw.color(180, 180, 180)
     draw.line({ x: tick + 1, y: 0, x2: tick + 1, y2: Dy })
 
-    if (pIn < pOut) {
+    if (pNetStored / pNetCap <= getVar<number>("CRITICAL_LEVEL")) {
+        draw.color(255, 0, 0, 100) // red
+        draw.rect({ x: prevTick, y: 0, height: Dy, width: 1 })
+    } else if (pNetStored / prevNetStored <= getVar<number>("CAP_DROP_WARN_THRESHOLD")) {
         draw.color(255, 165, 0, 64) // orange
         draw.rect({ x: prevTick, y: 0, height: Dy, width: 1 })
     }
@@ -115,6 +122,8 @@ function showInvalidationMask() {
 
 var nextLoopBeginTime = 0
 
+var currentRoundMaxFlow = 0
+
 while (Vars.links == initialLinks) {
     var pIn = firstNode.powerNetIn
     var pOut = firstNode.powerNetOut
@@ -145,6 +154,7 @@ while (Vars.links == initialLinks) {
     // end: fps limiter + smoothing
 
     const maxFlow = Math.max(pIn, pOut)
+    currentRoundMaxFlow = Math.max(currentRoundMaxFlow, maxFlow)
 
     // if (!isFirstRun && (maxFlow > ioDisplayScale || pNetCap > storageDisplayScale)) {
     //     rescaleData(ioDisplayScale, newStorageDisplayScale)
@@ -171,7 +181,7 @@ while (Vars.links == initialLinks) {
     }
 
     if (pNetCap > storageDisplayScale) {
-        let newScale = Math.max(storageDisplayScale, pNetCap * 1.618)
+        let newScale = Math.max(storageDisplayScale, pNetCap * storageScaleMultipleFactor)
         prevNetCap = prevNetCap / newScale * storageDisplayScale
         prevNetStored = prevNetStored / newScale * storageDisplayScale
 
@@ -193,6 +203,25 @@ while (Vars.links == initialLinks) {
     currentScreenTick++
     if (currentScreenTick >= dispW) {
         showInvalidationMask()
+
+        // rescaling
+        if (currentRoundMaxFlow < ioDisplayScale * 0.2) {
+            let newScale = currentRoundMaxFlow * displayScaleMultipleFactor
+            prevPInY = prevPInY / newScale * ioDisplayScale
+            prevPOutY = prevPOutY / newScale * ioDisplayScale
+            ioDisplayScale = newScale
+        }
+
+        // Net Capacity doesn't change as drastically as flow. 
+        // So we check the capacity only at the last moment of current round of scanning
+        if (pNetCap < storageDisplayScale * 0.2) {
+            let newScale = pNetCap * storageScaleMultipleFactor
+            prevNetStored = prevNetStored / newScale * storageDisplayScale
+            prevNetCap = prevNetCap / newScale * storageDisplayScale
+            storageDisplayScale = newScale
+        }
+
+        currentRoundMaxFlow = 0
         currentScreenTick = 1
     }
 
