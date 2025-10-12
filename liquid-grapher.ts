@@ -76,7 +76,7 @@ var prev3 = undefined
 var prev4 = undefined
 
 const warnLevelThreshold = Dy * 0.001
-const criticalThreshold = Dy * 0.1
+const criticalThreshold = Dy * 0.25
 
 function redrawAtIndex(tick, r1, r2, r3, r4) {
     const prevTick = tick - 1
