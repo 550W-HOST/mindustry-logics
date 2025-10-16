@@ -1,11 +1,11 @@
 // Use this schematic:
 // https://github.com/550W-HOST/mindustry-schematics/blob/master/1x%E7%BE%A4%E5%8F%8B%E7%9A%84%E8%87%AA%E6%8E%A7%E8%B6%85%E9%80%9F%E7%A9%B9%E9%A1%B6%EF%BC%88%E9%9C%80%E8%A6%81%E8%BF%90%E8%BE%93%E5%8D%95%E4%BD%8D%EF%BC%89.msch
-asm`set version "2.5"`;
+asm`set version "2.6"`;
 asm`set state "init"`;
 
 let item1: ItemSymbol = Items.phaseFabric;
 let item2: ItemSymbol = Items.silicon;
-let takeCount = 30;
+let takeCount = 60;
 let idlePerItem = 0.1;
 
 const source = () => getCore();
@@ -63,7 +63,16 @@ function bindAvailableUnit() {
     setState("bind unit");
     while (1) {
         while (!Vars.unit || Vars.unit.dead || Vars.unit.controlled) {
-            unitBind(Units.poly);
+            let tries = 0;
+            while (!Vars.unit || Vars.unit.dead || Vars.unit.controlled) {
+                unitBind(Units.poly);
+                if (++tries == 30) break;
+            }
+            tries = 0;
+            while (!Vars.unit || Vars.unit.dead || Vars.unit.controlled) {
+                unitBind(Units.mega);
+                if (++tries == 30) break;
+            }
         }
         unitControl.idle();
         setState("bind unit locking");
