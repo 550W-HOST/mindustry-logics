@@ -1,6 +1,3 @@
-const source = () => getCore();
-const repair = () => getRepair();
-
 let GLOBALTARGET = undefined;
 main();
 
@@ -13,6 +10,7 @@ function main() {
             wait(0.1);
             continue;
         }
+
         unitControl.flag(150);
         const [found, x, y, core] = unitLocate.spawn();
 
@@ -50,7 +48,7 @@ function main() {
         }
 
         const { x: ex, y: ey } = enemy;
-        unitControl.approach({ x: ex, y: ey, radius: Vars.unit.range-5 });
+        unitControl.approach({ x: ex, y: ey, radius: Vars.unit.range - 5 });
 
         if (!enemy.dead) {
             unitControl.targetp({
@@ -62,11 +60,6 @@ function main() {
         }
         wait(0.1);
     }
-}
-
-function getCore() {
-    const [, , , building] = unitLocate.building({ group: 'core', enemy: false });
-    return building;
 }
 
 function getRepair() { 
